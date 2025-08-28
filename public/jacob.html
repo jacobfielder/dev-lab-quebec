@@ -7,5 +7,16 @@
 </head>
 <body>
     <h1>Jacobs Landing page</h1>
+    <script>
+        fetch('/api/barry')
+          .then(response => response.json())
+          .then(data => {
+            document.body.innerHTML += `<p>API says: ${data.myVar}</p>`;
+          })
+          .catch(err => {
+            document.body.innerHTML += `<p>Error fetching API</p>`;
+          });
+      </script>
+
 </body>
 </html>

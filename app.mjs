@@ -2,9 +2,8 @@ import 'dotenv/config'
 import express from 'express'
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-//import { dirname } from 'node:path';
-//import { fileURLToPath } from 'node:url';
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
+import axios from 'axios';
 
 const app = express()
 const __filename = fileURLToPath(import.meta.url);
@@ -23,49 +22,114 @@ const client = new MongoClient(uri, {
   }
 });
 
-async function run() {
+// Connect to MongoDB and keep connection open
+let db;
+
+async function connectDB() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+    console.log("Successfully connected to MongoDB!");
+    db = client.db("pokemon_teams");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
   }
 }
-run().catch(console.dir);
 
+connectDB();
 
-
+// Middleware
+app.use(express.json());
 app.use(express.static(join(__dirname, 'public')))
 
 
 app.get('/', (req, res) => {
-  res.send('Hello Jacoby." <a href="jacob">jacob</a>')
+  res.send('Hello Jacoby! <a href="jacob">jacob</a> | <a href="pokemon-teams">Pokemon Teams</a>')
 })
 
 app.get('/jacob', (req, res) => {
- 
   res.sendFile(join(__dirname, 'public', 'jacob.html')) 
-
 })
 
-//res.sendFile(join(__dirname, 'public', 'jacob.html'))
-// endpoints... middlewares.... apis?
-// send an html file
+app.get('/pokemon-teams', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'pokemon-teams.html'))
+})
 
+
+// Simple helper function to fetch random Pokemon from PokeAPI
+async function getRandomPokemon() {
+  const randomId = Math.floor(Math.random() * 150) + 1; // Just first 150 Pokemon for simplicity
+  const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+  const pokemon = response.data;
+  
+  return {
+    id: pokemon.id,
+    name: pokemon.name,
+    sprite: pokemon.sprites.front_default,
+    types: pokemon.types.map(type => type.type.name)
+  };
+}
+
+// API endpoints
+
+// GET all teams
+app.get('/api/teams', async (req, res) => {
+  const teams = await db.collection('teams').find({}).toArray();
+  res.json(teams);
+});
+
+// POST create new team
+app.post('/api/teams', async (req, res) => {
+  const { name, pokemon } = req.body;
+  
+  const newTeam = {
+    name,
+    pokemon,
+    createdAt: new Date()
+  };
+
+  const result = await db.collection('teams').insertOne(newTeam);
+  const team = await db.collection('teams').findOne({ _id: result.insertedId });
+  
+  res.json(team);
+});
+
+// PUT update team
+app.put('/api/teams/:id', async (req, res) => {
+  const { name } = req.body;
+  await db.collection('teams').updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: { name } }
+  );
+  res.json({ message: 'Team updated' });
+});
+
+// DELETE team
+app.delete('/api/teams/:id', async (req, res) => {
+  await db.collection('teams').deleteOne({ _id: new ObjectId(req.params.id) });
+  res.json({ message: 'Team deleted' });
+});
+
+// POST generate random team
+app.post('/api/teams/generate', async (req, res) => {
+  const pokemon = [];
+  
+  // Generate 6 random Pokemon
+  for (let i = 0; i < 6; i++) {
+    const randomPokemon = await getRandomPokemon();
+    pokemon.push(randomPokemon);
+  }
+  
+  res.json({ pokemon });
+});
+
+// Keep your existing test endpoint
 app.get('/api/jacob', (req, res) => {
   // res.send('barry. <a href="/">home</a>')
   const myVar = 'Hello from server!';
   res.json({ myVar });
 })
 
-app.listen(3000)
-
-//app.listen(PORT, () => {
- // console.log(`Example app listening on port ${PORT}`)
-//})
-
-//TODO: refactor to use env port
+app.listen(PORT, () => {
+  console.log(`Pokemon Team Generator listening on port ${PORT}`);
+});

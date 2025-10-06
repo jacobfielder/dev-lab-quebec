@@ -58,7 +58,7 @@ app.get('/pokemon-teams', (req, res) => {
 
 // Simple helper function to fetch random Pokemon from PokeAPI
 async function getRandomPokemon() {
-  const randomId = Math.floor(Math.random() * 150) + 1; // Just first 150 Pokemon for simplicity
+  const randomId = Math.floor(Math.random() * 600) + 1; // Just first 150 Pokemon for simplicity
   const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
   const pokemon = response.data;
   

@@ -1,8 +1,8 @@
 ## Pokemon Team Generator - Full Stack Application
 
 ### User Story
-**As a** Gamer  
-**I want to** Generate a pokemon team for the new pokemon game  
+**As a** gamer  
+**I want to** generate a pokemon team for the new pokemon game  
 **So that** I can have fun and enjoy the new pokemon game!  
 
 ### App Story
@@ -16,6 +16,7 @@ This full-stack web application demonstrates a complete data round trip by allow
 - **View** all saved teams with Pokemon details
 - **Edit** team names and manage their collection
 - **Delete** teams they no longer want
+
 
 
 

@@ -47,9 +47,7 @@ app.get('/', (req, res) => {
   res.send('Hello Jacoby! <a href="jacob">jacob</a> | <a href="pokemon-teams">Pokemon Teams</a>')
 })
 
-app.get('/jacob', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'jacob.html')) 
-})
+
 
 app.get('/pokemon-teams', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'pokemon-teams.html'))

@@ -44,12 +44,6 @@ app.use(express.static(join(__dirname, 'public')))
 
 
 app.get('/', (req, res) => {
-  res.send('Hello Jacoby! <a href="jacob">jacob</a> | <a href="pokemon-teams">Pokemon Teams</a>')
-})
-
-
-
-app.get('/pokemon-teams', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'pokemon-teams.html'))
 })
 

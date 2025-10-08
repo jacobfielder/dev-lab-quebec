@@ -1,91 +1,89 @@
 let currentTeam = [];
 
-// Generate a random team
+// Initialize when page loads
+$(document).ready(() => {
+    loadTeams();
+    $('.btn').hover(
+        function() { $(this).addClass('shadow-lg'); },
+        function() { $(this).removeClass('shadow-lg'); }
+    );
+});
+
+// Generate random team
 async function generateTeam() {
     showLoading('Generating team...');
     
     try {
-        const response = await fetch('/api/teams/generate', {
-            method: 'POST'
-        });
-        
+        const response = await fetch('/api/teams/generate', { method: 'POST' });
         const data = await response.json();
         
         if (response.ok) {
             currentTeam = data.pokemon;
             displayTeam(currentTeam);
-            showMessage('Team generated successfully!', 'success');
+            showMessage('Team generated! ✨', 'success');
         } else {
-            showMessage('Failed to generate team', 'error');
+            showMessage('Failed to generate team ❌', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error generating team', 'error');
+        showMessage('Error generating team ❌', 'error');
     }
-    
-    hideLoading();
 }
 
-// Display team on the page
+// Display Pokemon team
 function displayTeam(pokemon) {
-    const container = document.getElementById('pokemon-display');
-    container.innerHTML = '';
+    const container = $('#pokemon-display');
+    container.empty();
     
     pokemon.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'pokemon-card';
-        card.innerHTML = `
-            <img src="${p.sprite}" alt="${p.name}">
-            <div class="pokemon-name">${p.name}</div>
-            <div class="pokemon-types">
-                ${p.types.map(type => `<span class="type-badge">${type}</span>`).join('')}
+        container.append(`
+            <div class="pokemon-card">
+                <img src="${p.sprite}" alt="${p.name}" loading="lazy">
+                <div class="pokemon-name">${p.name}</div>
+                <div class="pokemon-types">
+                    ${p.types.map(type => `<span class="type-badge">${type}</span>`).join('')}
+                </div>
             </div>
-        `;
-        container.appendChild(card);
+        `);
     });
 }
 
-// Save current team
+// Save team
 async function saveTeam() {
-    const teamName = document.getElementById('teamName').value.trim();
+    const teamName = $('#teamName').val().trim();
     
     if (!teamName) {
-        showMessage('Please enter a team name', 'error');
+        showMessage('Please enter a team name 📝', 'warning');
         return;
     }
-    
     if (currentTeam.length === 0) {
-        showMessage('Generate a team first', 'error');
+        showMessage('Generate a team first 🎲', 'warning');
         return;
     }
     
     try {
         const response = await fetch('/api/teams', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: teamName,
-                pokemon: currentTeam
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: teamName, pokemon: currentTeam })
         });
         
         if (response.ok) {
-            showMessage('Team saved successfully!', 'success');
-            document.getElementById('teamName').value = '';
+            showMessage('Team saved! 🎉', 'success');
+            $('#teamName').val('');
             loadTeams();
         } else {
-            showMessage('Failed to save team', 'error');
+            showMessage('Failed to save team ❌', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error saving team', 'error');
+        showMessage('Error saving team ❌', 'error');
     }
 }
 
-// Load all saved teams
+// Load saved teams
 async function loadTeams() {
+    const container = $('#saved-teams');
+    container.html('<h3 class="text-center"><div class="spinner-border text-primary me-2"></div>Loading...</h3>');
+    
     try {
         const response = await fetch('/api/teams');
         const teams = await response.json();
@@ -93,119 +91,104 @@ async function loadTeams() {
         if (response.ok) {
             displaySavedTeams(teams);
         } else {
-            showMessage('Failed to load teams', 'error');
+            showMessage('Failed to load teams ❌', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error loading teams', 'error');
+        showMessage('Error loading teams ❌', 'error');
     }
 }
 
 // Display saved teams
 function displaySavedTeams(teams) {
-    const container = document.getElementById('saved-teams');
-    container.innerHTML = '<h3>Saved Teams</h3>';
+    const container = $('#saved-teams');
+    container.html('<h3 class="text-center mb-4">📚 Saved Teams</h3>');
     
     if (teams.length === 0) {
-        container.innerHTML += '<p>No saved teams yet.</p>';
+        container.append('<div class="text-center text-muted p-4">No saved teams yet. Create your first! 🌟</div>');
         return;
     }
     
     teams.forEach(team => {
-        const teamDiv = document.createElement('div');
-        teamDiv.className = 'team-item';
-        teamDiv.innerHTML = `
-            <div class="team-header">
-                <strong>${team.name}</strong>
-                <div>
-                    <button class="btn" onclick="editTeamName('${team._id}', '${team.name}')">Edit</button>
-                    <button class="btn btn-danger" onclick="deleteTeam('${team._id}')">Delete</button>
+        container.append(`
+            <div class="team-item">
+                <div class="team-header">
+                    <h4 class="text-primary">${team.name}</h4>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="editTeamName('${team._id}', '${team.name.replace(/'/g, "\\'")}')">✏️ Edit</button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteTeam('${team._id}')">🗑️ Delete</button>
+                    </div>
                 </div>
+                <small class="text-muted">📅 ${new Date(team.createdAt).toLocaleDateString()} | 👾 ${team.pokemon?.length || 0} Pokemon</small>
             </div>
-            <div>Created: ${new Date(team.createdAt).toLocaleDateString()}</div>
-        `;
-        container.appendChild(teamDiv);
+        `);
     });
 }
 
 // Edit team name
 async function editTeamName(teamId, currentName) {
     const newName = prompt('Enter new team name:', currentName);
-    
-    if (!newName || newName === currentName) {
-        return;
-    }
+    if (!newName || newName === currentName) return;
     
     try {
         const response = await fetch(`/api/teams/${teamId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName })
         });
         
         if (response.ok) {
-            showMessage('Team name updated successfully!', 'success');
+            showMessage('Team updated! ✅', 'success');
             loadTeams();
         } else {
-            showMessage('Failed to update team', 'error');
+            showMessage('Failed to update ❌', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error updating team', 'error');
+        showMessage('Error updating ❌', 'error');
     }
 }
 
-// Delete a team
+// Delete team
 async function deleteTeam(teamId) {
-    if (!confirm('Are you sure you want to delete this team?')) {
-        return;
-    }
+    if (!confirm('Delete this team?')) return;
     
     try {
-        const response = await fetch(`/api/teams/${teamId}`, {
-            method: 'DELETE'
-        });
+        const response = await fetch(`/api/teams/${teamId}`, { method: 'DELETE' });
         
         if (response.ok) {
-            showMessage('Team deleted successfully!', 'success');
+            showMessage('Team deleted! 🗑️', 'success');
             loadTeams();
         } else {
-            showMessage('Failed to delete team', 'error');
+            showMessage('Failed to delete ❌', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error deleting team', 'error');
+        showMessage('Error deleting ❌', 'error');
     }
 }
 
-// Show message to user
+// Show message
 function showMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
-    messageDiv.textContent = message;
+    $('.alert').remove();
     
-    const container = document.querySelector('.controls');
-    container.appendChild(messageDiv);
+    const alertClass = type === 'success' ? 'alert-success' : 
+                     type === 'error' ? 'alert-danger' : 'alert-warning';
     
-    setTimeout(() => {
-        messageDiv.remove();
-    }, 3000);
+    const messageDiv = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show mt-3">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.controls').append(messageDiv);
+    setTimeout(() => messageDiv.remove(), 4000);
 }
 
-// Show loading state
+// Show loading
 function showLoading(message) {
-    const container = document.getElementById('pokemon-display');
-    container.innerHTML = `<div class="loading">${message}</div>`;
+    $('#pokemon-display').html(`
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary mb-3"></div>
+            <div class="text-muted">${message}</div>
+        </div>
+    `);
 }
-
-// Hide loading state
-function hideLoading() {
-    // Loading is hidden when displayTeam is called
-}
-
-// Load teams when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadTeams();
-});

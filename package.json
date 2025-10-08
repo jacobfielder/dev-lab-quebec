@@ -1,5 +1,5 @@
 {
-  "name": "sturdy-chainsaw-hello-express",
+  "name": "dev-lab-quebec",
   "version": "1.0.0",
   "main": "app.mjs",
   "type": "module",
@@ -14,7 +14,7 @@
   "description": "",
   "dependencies": {
     "axios": "^1.12.2",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "mongodb": "^6.19.0"
   },
